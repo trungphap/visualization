@@ -1,0 +1,59 @@
+Set dataManagerTables = '','c_stock_clean';
+//This block renames script tables from non generated section which conflict with the names of managed tables
+
+For each name in $(dataManagerTables) 
+    Let index = 0;
+    Let currentName = name; 
+    Let tableNumber = TableNumber(name); 
+    Let matches = 0; 
+    Do while not IsNull(tableNumber) or (index > 0 and matches > 0)
+        index = index + 1; 
+        currentName = name & '-' & index; 
+        tableNumber = TableNumber(currentName) 
+        matches = Match('$(currentName)', $(dataManagerTables));
+    Loop 
+    If index > 0 then 
+            Rename Table '$(name)' to '$(currentName)'; 
+    EndIf; 
+Next; 
+Set dataManagerTables = ;
+
+
+Unqualify *;
+
+[IdCount_temp_57b04468-6325-4661-03fe-a2f9eaa5]:
+LOAD
+	[id] AS [IdCount.id],
+	[IdCount]
+RESIDENT [IdCount];
+DROP TABLE [IdCount];
+
+[c_stock_temp_bf07c9d7-fda3-e5b8-7879-7438c51b]:
+LOAD
+	[id] AS [c_stock.id],
+	[forest_typ],
+	[biomass],
+	[coef],
+	[reclassc],
+	[soiloganic],
+	[surface],
+	[soiloganic_kg],
+	[village],
+	[year]
+RESIDENT [c_stock];
+DROP TABLE [c_stock];
+
+INNER JOIN ([c_stock_temp_bf07c9d7-fda3-e5b8-7879-7438c51b]) LOAD
+	[id] AS [c_stock.id]
+RESIDENT [IdCount3];
+DROP TABLE [IdCount3];
+
+
+
+
+
+RENAME TABLE [IdCount_temp_57b04468-6325-4661-03fe-a2f9eaa5] to [IdCount];
+
+RENAME TABLE [c_stock_temp_bf07c9d7-fda3-e5b8-7879-7438c51b] to [c_stock];
+
+RENAME TABLE [c_stock] to [c_stock_clean];

@@ -1,0 +1,86 @@
+Set dataManagerTables = '','(c_stock)','c_stock_2021','c_stock_2022','c_stock_2023';
+//This block renames script tables from non generated section which conflict with the names of managed tables
+
+For each name in $(dataManagerTables) 
+    Let index = 0;
+    Let currentName = name; 
+    Let tableNumber = TableNumber(name); 
+    Let matches = 0; 
+    Do while not IsNull(tableNumber) or (index > 0 and matches > 0)
+        index = index + 1; 
+        currentName = name & '-' & index; 
+        tableNumber = TableNumber(currentName) 
+        matches = Match('$(currentName)', $(dataManagerTables));
+    Loop 
+    If index > 0 then 
+            Rename Table '$(name)' to '$(currentName)'; 
+    EndIf; 
+Next; 
+Set dataManagerTables = ;
+
+
+Unqualify *;
+
+[c_stock]:
+LOAD
+	[id],
+	[forest_typ],
+	//[ldlr],
+	[tenldlr] as type_label,
+	//[villag_new],
+	[biomass],
+    [biomass] / [dt] as biomass_by_surface,
+	[heso] as coef,
+	[reclassc],
+	//[thongiaokh],
+	//[tinh],
+	[soiloganic],
+	[dt] as surface,
+	[soiloganic_kg],
+	[xa] as village,
+	[year]
+ FROM [lib://DataFiles/*Add_Year.xlsx]
+(ooxml, embedded labels, table is c_stock) 
+where soiloganic  > 0 and soiloganic_kg > 0 and dt > 0;
+
+IdCount:
+LOAD 
+   id as id1,
+   Count(id) as IdCount
+Resident c_stock
+GROUP BY id;
+
+IdCount3:
+LOAD
+	[id1] as id
+Resident IdCount
+Where IdCount > 2;
+
+Type_Correlation: 
+Load 
+    year as year_type, Correl(biomass_by_surface, forest_typ) as biomass_type_correl
+Resident c_stock
+Group by year;
+
+Coef_Correlation: 
+Load 
+    year as year_coef, Correl(biomass_by_surface, coef) as biomass_coef_correl
+Resident c_stock
+Group by year;
+
+Reclass_Correlation: 
+Load 
+    year as year_reclass, Correl(biomass_by_surface, reclassc) as biomass_reclass_correl
+Resident c_stock
+Group by year;
+
+
+   
+
+
+
+
+
+
+
+
